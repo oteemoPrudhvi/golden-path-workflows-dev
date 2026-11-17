@@ -1,0 +1,188 @@
+# =============================================================================
+# Golden-path CI/CD for a Python package (reusable workflow)
+# =============================================================================
+# Every generated package calls this with a short caller workflow (see
+# python-skeleton/.github/workflows/ci.yml). Pipeline changes are made HERE and rolled
+# out by moving the major tag (v1); generated repos never edit pipeline logic.
+#
+# Stages: lint+format (ruff) -> type check (mypy) -> tests+coverage (pytest)
+#         -> build sdist+wheel -> dependency scan (pip-audit)
+#         -> publish to CodeArtifact (only on a version tag, only if enabled)
+#
+# AWS access is OIDC only: the publish job assumes a publish-only role. No
+# access keys or tokens are stored anywhere. The caller must grant
+#   permissions: { contents: read, id-token: write }
+# because a called workflow can never hold more permission than its caller.
+# =============================================================================
+name: Python CI (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: Python version used for every job.
+        type: string
+        default: '3.12'
+      coverage-threshold:
+        description: Minimum total test coverage, in percent.
+        type: number
+        default: 80
+      publish:
+        description: Publish to CodeArtifact when a version tag (v*) is pushed.
+        type: boolean
+        default: false
+      aws-region:
+        description: AWS region of the CodeArtifact domain.
+        type: string
+        default: us-east-1
+      role-arn:
+        description: Publish-only IAM role to assume through GitHub OIDC.
+        type: string
+        default: ''
+      codeartifact-domain:
+        description: CodeArtifact domain name.
+        type: string
+        default: ''
+      codeartifact-repository:
+        description: CodeArtifact repository name.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint and format (ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+
+  typecheck:
+    name: Type check (mypy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e ".[dev]"
+      - run: mypy src
+
+  test:
+    name: Unit tests and coverage (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest --cov --cov-report=term-missing --cov-fail-under=${{ inputs.coverage-threshold }}
+
+  scan:
+    name: Dependency vulnerability scan (pip-audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - run: pip install pip-audit
+      # Audits the package's own runtime dependencies, not the dev tooling.
+      - run: pip-audit .
+
+  build:
+    name: Build sdist and wheel
+    needs: [lint, typecheck, test, scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish to CodeArtifact
+    needs: build
+    # Version tags only. A branch or PR run builds and verifies but never publishes.
+    if: inputs.publish && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write # request the OIDC token — the only reason this is granted
+      contents: read
+    steps:
+      - name: Fail early if publishing is not configured
+        env:
+          ROLE_ARN: ${{ inputs.role-arn }}
+          DOMAIN: ${{ inputs.codeartifact-domain }}
+          REPOSITORY: ${{ inputs.codeartifact-repository }}
+        run: |
+          for name in ROLE_ARN DOMAIN REPOSITORY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Publishing is enabled but $name is empty. The caller must pass role-arn, codeartifact-domain and codeartifact-repository (repository variables AWS_ROLE_ARN, CODEARTIFACT_DOMAIN, CODEARTIFACT_REPOSITORY)."
+              exit 1
+            fi
+          done
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Tag must match the package version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          wheels=(dist/*.whl)
+          wheel_version="$(basename "${wheels[0]}" | sed -E 's/^[^-]+-([^-]+)-.*/\1/')"
+          if [ "$tag" != "$wheel_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the built version $wheel_version. Bump the version in pyproject.toml, then tag again."
+            exit 1
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v4
+        with:
+          role-to-assume: ${{ inputs.role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - run: pip install twine
+      - name: Publish
+        env:
+          DOMAIN: ${{ inputs.codeartifact-domain }}
+          REPOSITORY: ${{ inputs.codeartifact-repository }}
+        run: |
+          # Writes a short-lived (12h) token into twine's config. Never printed.
+          aws codeartifact login --tool twine --domain "$DOMAIN" --repository "$REPOSITORY"
+          twine upload --repository codeartifact dist/*

@@ -1,0 +1,24 @@
+# Short caller: all pipeline logic lives in the central reusable workflow.
+# To change what CI does, change golden-path-workflows, not this file.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # needed only by the publish job; OIDC, no stored credentials
+
+jobs:
+  ci:
+    uses: Oteemo/golden-path-workflows/.github/workflows/python-ci.yml@v1
+    with:
+      python-version: '{{python_version}}'
+      publish: ${{ vars.PUBLISH_ENABLED == 'true' }}
+      aws-region: ${{ vars.AWS_REGION }}
+      role-arn: ${{ vars.AWS_ROLE_ARN }}
+      codeartifact-domain: ${{ vars.CODEARTIFACT_DOMAIN }}
+      codeartifact-repository: ${{ vars.CODEARTIFACT_REPOSITORY }}
