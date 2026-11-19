@@ -1,6 +1,6 @@
 site_name: {{package_name}}
 site_description: "{{description}}"
-repo_url: https://github.com/Oteemo/{{package_name}}
+repo_url: https://github.com/oteemoPrudhvi/{{package_name}}
 edit_uri: edit/main/docs/
 nav:
   - Home: index.md

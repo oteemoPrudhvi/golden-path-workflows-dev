@@ -66,9 +66,9 @@ variable "codeartifact_upstreams" {
 }
 
 variable "role_name_prefix" {
-  description = "Prefix of the publish role name. Must match the prefix allowed by the IRSA role policy."
+  description = "Prefix of the publish role name. Must be gp-*: the provisioner role only manages gp-* roles."
   type        = string
-  default     = "python-pkg-"
+  default     = "gp-"
 }
 
 variable "default_branch" {

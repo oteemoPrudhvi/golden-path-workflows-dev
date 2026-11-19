@@ -22,7 +22,7 @@ CI runs on every pull request and push to `main`. To publish a version:
 2. Tag the merge commit with the same version: `git tag v0.2.0 && git push origin v0.2.0`.
 
 The tag triggers a publish to AWS CodeArtifact (if publishing is enabled for this
-package). The pipeline logic lives in `Oteemo/golden-path-workflows`; this repo only
+package). The pipeline logic lives in `oteemoPrudhvi/golden-path-workflows-dev`; this repo only
 holds the short caller in `.github/workflows/ci.yml`.
 
 ## Install from CodeArtifact

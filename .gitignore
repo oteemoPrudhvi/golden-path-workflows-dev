@@ -1,0 +1,9 @@
+# Terraform local files: never commit (the provider binary alone is ~800 MB)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+backend.hcl
+terraform.tfvars
+crash.log
