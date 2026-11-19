@@ -35,10 +35,28 @@ locals {
 
   # Only version tags and the default branch may publish. Pull requests are not listed,
   # so code from a pull request can never assume the publish role.
-  allowed_subjects = [
-    "repo:${local.github_repository}:ref:refs/tags/*",
-    "repo:${local.github_repository}:ref:refs/heads/${var.default_branch}",
-  ]
+  #
+  # GitHub puts one of two subject formats on the token: the name-based
+  # repo:<owner>/<name>:... and, for newer repositories, the immutable
+  # repo:<owner>@<owner_id>/<name>@<repo_id>:... . Trust the name-based form always, and the
+  # immutable form when the ids are known (the ids make the match robust against a deleted
+  # and recreated repository or account with the same name).
+  github_owner = split("/", local.github_repository)[0]
+  github_name  = split("/", local.github_repository)[1]
+
+  subject_prefixes = concat(
+    ["repo:${local.github_repository}"],
+    var.github_repository_id == "" ? [] : [
+      "repo:${local.github_owner}@${var.github_owner_id}/${local.github_name}@${var.github_repository_id}",
+    ],
+  )
+
+  allowed_subjects = flatten([
+    for prefix in local.subject_prefixes : [
+      "${prefix}:ref:refs/tags/*",
+      "${prefix}:ref:refs/heads/${var.default_branch}",
+    ]
+  ])
 }
 
 module "repository" {

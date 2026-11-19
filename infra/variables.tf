@@ -88,3 +88,37 @@ variable "extra_tags" {
   type        = map(string)
   default     = {}
 }
+
+# ---------------------------------------------------------------------------
+# GitHub immutable OIDC subject
+# ---------------------------------------------------------------------------
+# Repositories created recently get this subject on their OIDC token:
+#   repo:<owner>@<owner_id>/<name>@<repo_id>:ref:refs/tags/v1.0.0
+# instead of repo:<owner>/<name>:ref:... . The Argo workflow passes both ids. When they are
+# empty, only the name-based subject is trusted (older repositories).
+variable "github_repository_id" {
+  description = "Numeric GitHub repository id (immutable OIDC subject). Empty to trust only the name-based subject."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.github_repository_id == "" || can(regex("^[0-9]+$", var.github_repository_id))
+    error_message = "github_repository_id must be numeric or empty."
+  }
+}
+
+variable "github_owner_id" {
+  description = "Numeric GitHub id of the repository owner (user or organization). Must be set together with github_repository_id."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.github_owner_id == "" || can(regex("^[0-9]+$", var.github_owner_id))
+    error_message = "github_owner_id must be numeric or empty."
+  }
+
+  validation {
+    condition     = (var.github_owner_id == "") == (var.github_repository_id == "")
+    error_message = "Set github_owner_id and github_repository_id together, or leave both empty."
+  }
+}
