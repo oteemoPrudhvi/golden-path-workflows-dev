@@ -38,18 +38,22 @@ locals {
   #
   # GitHub puts one of two subject formats on the token: the name-based
   # repo:<owner>/<name>:... and, for newer repositories, the immutable
-  # repo:<owner>@<owner_id>/<name>@<repo_id>:... . Trust the name-based form always, and the
-  # immutable form when the ids are known (the ids make the match robust against a deleted
-  # and recreated repository or account with the same name).
+  # repo:<owner>@<owner_id>/<name>@<repo_id>:... .
+  #
+  # When the ids are known, trust ONLY the immutable form. The name-based form matches any
+  # repository that later gets the same name, so if this role outlived a deleted repo, whoever
+  # recreated the name and pushed a v* tag (or the default branch) could publish. The ids
+  # change when a repository or account is recreated, so the immutable form cannot be
+  # reused that way. The name-based form is the fallback only when no ids are given
+  # (manual runs); the workflow always passes them.
   github_owner = split("/", local.github_repository)[0]
   github_name  = split("/", local.github_repository)[1]
 
-  subject_prefixes = concat(
-    ["repo:${local.github_repository}"],
-    var.github_repository_id == "" ? [] : [
-      "repo:${local.github_owner}@${var.github_owner_id}/${local.github_name}@${var.github_repository_id}",
-    ],
-  )
+  subject_prefixes = var.github_repository_id == "" ? [
+    "repo:${local.github_repository}",
+    ] : [
+    "repo:${local.github_owner}@${var.github_owner_id}/${local.github_name}@${var.github_repository_id}",
+  ]
 
   allowed_subjects = flatten([
     for prefix in local.subject_prefixes : [

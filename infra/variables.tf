@@ -94,8 +94,9 @@ variable "extra_tags" {
 # ---------------------------------------------------------------------------
 # Repositories created recently get this subject on their OIDC token:
 #   repo:<owner>@<owner_id>/<name>@<repo_id>:ref:refs/tags/v1.0.0
-# instead of repo:<owner>/<name>:ref:... . The Argo workflow passes both ids. When they are
-# empty, only the name-based subject is trusted (older repositories).
+# instead of repo:<owner>/<name>:ref:... . The Argo workflow passes both ids. With the ids, the role
+# trusts ONLY the immutable subject (the name-based one would match a recreated repo of the same
+# name). When they are empty, only the name-based subject is trusted (manual runs).
 variable "github_repository_id" {
   description = "Numeric GitHub repository id (immutable OIDC subject). Empty to trust only the name-based subject."
   type        = string
