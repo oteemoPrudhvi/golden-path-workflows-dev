@@ -4,12 +4,12 @@ metadata:
   name: {{package_name}}
   description: "{{description}}"
   annotations:
-    github.com/project-slug: oteemoPrudhvi/{{package_name}}
+    github.com/project-slug: {{organization}}/{{package_name}}
     backstage.io/techdocs-ref: dir:.
   tags:
     - python
   links:
-    - url: https://github.com/oteemoPrudhvi/{{package_name}}
+    - url: https://github.com/{{organization}}/{{package_name}}
       title: Repository
       icon: github
 spec:
