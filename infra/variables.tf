@@ -71,12 +71,6 @@ variable "role_name_prefix" {
   default     = "gp-"
 }
 
-variable "default_branch" {
-  description = "Default branch of the generated repository. Pushes to it may publish pre-release versions."
-  type        = string
-  default     = "dev"
-}
-
 variable "permissions_boundary_arn" {
   description = "Optional permissions boundary attached to the publish role."
   type        = string

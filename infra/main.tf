@@ -57,8 +57,8 @@ locals {
 
   allowed_subjects = flatten([
     for prefix in local.subject_prefixes : [
-      "${prefix}:ref:refs/tags/*",
-      "${prefix}:ref:refs/heads/${var.default_branch}",
+      # Version tags only: the reusable CI publishes only on refs/tags/v*. No branch is trusted.
+      "${prefix}:ref:refs/tags/v*",
     ]
   ])
 }

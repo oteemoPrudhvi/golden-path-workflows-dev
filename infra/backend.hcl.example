@@ -1,0 +1,7 @@
+# Copy to backend.hcl for a local run (the workflow passes these itself):
+#   terraform init -backend-config=backend.hcl \
+#     -backend-config="key=golden-path/packages/<package_name>/terraform.tfstate"
+#
+# backend.hcl is gitignored — it contains the account id.
+bucket = "omf-dev-tfstate-REPLACE_WITH_ACCOUNT_ID"
+region = "us-east-1"

@@ -1,0 +1,22 @@
+# Terraform working directories and local state
+.terraform/
+
+# .terraform.lock.hcl IS committed, deliberately. The version constraints in
+# versions.tf are ranges; the lock file is what pins the exact provider build
+# and its checksums. Ignoring it means "pinned providers" is only aspirational
+# and two people can resolve different versions from the same code.
+# Raised in review.
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Never commit real variable values — they contain account ids, CIDRs and
+# sometimes secrets. Commit terraform.tfvars.example instead.
+*.tfvars
+!*.tfvars.example
+
+# Plan output can contain sensitive values
+*.tfplan
+
+# Backend config contains the account id. Commit backend.hcl.example instead.
+backend.hcl

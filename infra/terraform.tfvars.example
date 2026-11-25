@@ -1,0 +1,19 @@
+# Copy to terraform.tfvars for a local run. terraform.tfvars is gitignored.
+# In the workflow these arrive as TF_VAR_* and the platform settings come from
+# the Helm chart values.
+
+# --- Per package (required) --------------------------------------------------
+package_name = "my-package"
+repo_url     = "https://github.com/Oteemo/my-package"
+
+# --- Per package (optional) --------------------------------------------------
+description     = "Example package"
+owner           = "oteemo-platform"
+publish_enabled = "true"
+
+# --- Platform settings (match config.terraform.* in the Helm chart) ----------
+aws_region               = "us-east-1"
+codeartifact_domain_name = "gp-python-package"
+role_name_prefix         = "gp-" # the provisioner role only manages gp-* roles
+default_branch           = "dev"
+# permissions_boundary_arn = "arn:aws:iam::123456789012:policy/omf-dev-golden-path-boundary"
