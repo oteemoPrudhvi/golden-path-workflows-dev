@@ -1,0 +1,8 @@
+# Namespace the Argo server and workflows run in.
+namespace: argo
+# The identity Backstage presents to Argo (Bearer token). Argo's "client" login mode
+# runs requests as this ServiceAccount, so Kubernetes RBAC decides what it can do.
+serviceAccountName: backstage-argo-submitter
+# The only WorkflowTemplate this identity may read. Matches the interface contract
+# shared by issues #49 and #50.
+workflowTemplateName: python-package-provisioning

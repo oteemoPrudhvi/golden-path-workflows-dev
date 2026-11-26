@@ -1,0 +1,4 @@
+# Copy to backend.hcl. Same bucket as envs/omf-dev — the key in backend.tf
+# keeps the two states separate.
+bucket = "omf-dev-tfstate-REPLACE_WITH_ACCOUNT_ID"
+region = "us-east-1"

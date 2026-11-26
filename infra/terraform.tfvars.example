@@ -15,5 +15,4 @@ publish_enabled = "true"
 aws_region               = "us-east-1"
 codeartifact_domain_name = "gp-python-package"
 role_name_prefix         = "gp-" # the provisioner role only manages gp-* roles
-default_branch           = "dev"
 # permissions_boundary_arn = "arn:aws:iam::123456789012:policy/omf-dev-golden-path-boundary"

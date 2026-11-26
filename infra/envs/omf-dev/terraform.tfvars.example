@@ -1,0 +1,54 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+#
+# To stand this up for a different client, copy the whole envs/omf-dev
+# directory to envs/<client>-dev and change `client` below. No module code
+# needs to change.
+
+# --- Required ----------------------------------------------------------------
+# Terraform refuses to run against any other account. Find yours with:
+#   aws sts get-caller-identity --query Account --output text
+allowed_account_id = "123456789012"
+
+# --- Identity ----------------------------------------------------------------
+client      = "omf"
+environment = "dev"
+region      = "us-east-1"
+owner       = "oteemo-platform"
+project     = "idx-platform"
+
+# --- TLS ---------------------------------------------------------------------
+# DECIDED 28 Oct 2026: Option B, no domain.
+#
+# Self-signed certificate on the ALB's generated hostname. Three things
+# follow, none of which are faults — they are the cost of this choice:
+#   - every user gets a browser certificate warning, once per browser
+#   - the certificate does NOT auto-renew; it is valid 365 days from apply
+#   - the ALB hostname IS the Okta redirect URI and Backstage baseUrl, so
+#     recreating the ingress breaks both. The load balancer name is pinned
+#     in the module to prevent that.
+#
+# Sequencing note: the Okta redirect URI cannot be registered until the ALB
+# exists, because its hostname is unknown until then.
+domain_name = ""
+
+# Option A is still implemented if a domain is obtained later. Setting
+# domain_name is the only change required — no code edits.
+# domain_name        = "example.click"
+# create_hosted_zone = false   # false if registered through Route 53
+
+# --- Sizing: demo for 1-2 users ----------------------------------------------
+# Roughly $377/month if left running. See the README cost section.
+backstage_node_instance_types = ["t3.large"]
+backstage_node_desired        = 2
+argo_node_instance_types      = ["t3.medium"]
+argo_node_desired             = 1
+argo_node_max                 = 4
+db_instance_class             = "db.t4g.micro"
+db_allocated_storage_gb       = 20
+
+# --- CI ----------------------------------------------------------------------
+github_org  = "Oteemo"
+github_repo = "backstage-app"
+
+# --- Narrow this for anything longer-lived than a demo -----------------------
+# cluster_public_access_cidrs = ["203.0.113.0/24"]

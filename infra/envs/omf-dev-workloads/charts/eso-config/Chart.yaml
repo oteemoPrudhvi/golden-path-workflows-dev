@@ -1,0 +1,5 @@
+apiVersion: v2
+name: eso-config
+description: ClusterSecretStore and ExternalSecret for Backstage. Lives in a chart rather than kubernetes_manifest because that resource validates the kind against the live API at plan time, and these kinds only exist once External Secrets is installed in the same apply.
+type: application
+version: 0.1.0

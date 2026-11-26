@@ -1,7 +1,7 @@
 # Plan-level tests for the per-package root module. No AWS calls, no credentials.
 #
-# Guarded here: the publish role is trusted only from version tags and the
-# default branch (never pull requests), names derive from the package, and
+# Guarded here: the publish role is trusted only from version tags
+# (no branch, never pull requests), names derive from the package, and
 # bad input is rejected before anything is planned.
 
 mock_provider "aws" {
@@ -83,6 +83,16 @@ run "publishing_can_be_disabled" {
     condition     = length(module.publish_role) == 0
     error_message = "No role should be planned when publishing is disabled."
   }
+}
+
+run "the_prerequisites_state_name_is_reserved" {
+  command = plan
+
+  variables {
+    package_name = "python-package-prerequisites"
+  }
+
+  expect_failures = [var.package_name]
 }
 
 run "an_invalid_package_name_is_rejected" {

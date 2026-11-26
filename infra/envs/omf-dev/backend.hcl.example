@@ -1,0 +1,6 @@
+# Copy to backend.hcl and fill in from the bootstrap module's outputs:
+#   cd ../../bootstrap && terraform output state_bucket
+#
+# backend.hcl is gitignored — it contains the account id.
+bucket = "omf-dev-tfstate-REPLACE_WITH_ACCOUNT_ID"
+region = "us-east-1"

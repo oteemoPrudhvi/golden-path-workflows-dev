@@ -33,8 +33,11 @@ locals {
 
   domain_arn = "arn:aws:codeartifact:${var.aws_region}:${local.account_id}:domain/${var.codeartifact_domain_name}"
 
-  # Only version tags and the default branch may publish. Pull requests are not listed,
-  # so code from a pull request can never assume the publish role.
+  # Only version tags (refs/tags/v*) may publish. No branch and no pull request is listed, so a push to
+  # a branch or code from a pull request can never assume the publish role.
+  #
+  # Branch protection does not cover tags: who may push a v* tag is a repository setting, enforced by the
+  # tag ruleset that stage 4 of the workflow creates (scripts/configure_github_variables.py).
   #
   # GitHub puts one of two subject formats on the token: the name-based
   # repo:<owner>/<name>:... and, for newer repositories, the immutable
@@ -42,7 +45,7 @@ locals {
   #
   # When the ids are known, trust ONLY the immutable form. The name-based form matches any
   # repository that later gets the same name, so if this role outlived a deleted repo, whoever
-  # recreated the name and pushed a v* tag (or the default branch) could publish. The ids
+  # recreated the name and pushed a v* tag could publish. The ids
   # change when a repository or account is recreated, so the immutable form cannot be
   # reused that way. The name-based form is the fallback only when no ids are given
   # (manual runs); the workflow always passes them.

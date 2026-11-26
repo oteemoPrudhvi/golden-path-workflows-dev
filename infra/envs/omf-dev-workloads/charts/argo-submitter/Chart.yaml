@@ -1,0 +1,5 @@
+apiVersion: v2
+name: argo-submitter
+description: ServiceAccount, Role and token for Backstage to submit one Argo WorkflowTemplate. Lives in a chart, not kubernetes_secret, so the generated token is never read back into Terraform state.
+type: application
+version: 0.1.0

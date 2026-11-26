@@ -1,0 +1,57 @@
+# What Backstage can do in Argo, and nothing more.
+#
+# Limit that Kubernetes RBAC cannot remove: submitting a workflow needs `create` on
+# `workflows`, and `create` cannot be restricted by name, so this identity could also
+# submit a workflow that does NOT reference the template. The blast radius is bounded
+# instead: this namespace only, no secrets, no pods, no other namespaces, and the
+# workflows run as the namespace's workflow ServiceAccount (artifact bucket only).
+# To close it fully, set the controller's workflowRestrictions.templateReferencing to
+# Strict; that also stops any inline workflow, so scripts/verify.sh must switch to
+# a WorkflowTemplate first. Left as a deliberate follow-up, not a default.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceAccountName }}
+  namespace: {{ .Values.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.serviceAccountName }}
+  namespace: {{ .Values.namespace }}
+rules:
+  # Read the one template it submits from. resourceNames works for `get`.
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflowtemplates"]
+    resourceNames: ["{{ .Values.workflowTemplateName }}"]
+    verbs: ["get"]
+  # Start a run, then follow it. No delete, no patch, no update.
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflows"]
+    verbs: ["create", "get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.serviceAccountName }}
+  namespace: {{ .Values.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccountName }}
+    namespace: {{ .Values.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.serviceAccountName }}
+---
+# Kubernetes fills in `token` on this Secret once it exists. It is read once, by an
+# administrator, and copied into Secrets Manager (see infra/README.md). It never
+# passes through Terraform.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.serviceAccountName }}-token
+  namespace: {{ .Values.namespace }}
+  annotations:
+    kubernetes.io/service-account.name: {{ .Values.serviceAccountName }}
+type: kubernetes.io/service-account-token

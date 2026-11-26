@@ -9,6 +9,14 @@ variable "package_name" {
     condition     = can(regex("^[a-z][a-z0-9-]{1,62}$", var.package_name))
     error_message = "package_name must be 2-63 characters: lowercase letters, numbers and hyphens, starting with a letter."
   }
+
+  # infra-prerequisites/ stores the shared CodeArtifact domain's state under this name. A package of
+  # the same name would use that state key, plan to destroy the shared domain and could remove it for
+  # every package. Keep equal to RESERVED_PACKAGE_NAMES in the chart's scripts/inputs.py.
+  validation {
+    condition     = !contains(["python-package-prerequisites"], var.package_name)
+    error_message = "package_name 'python-package-prerequisites' is reserved: it is the state key of the shared prerequisites stack."
+  }
 }
 
 variable "repo_url" {

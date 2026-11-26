@@ -1,0 +1,11 @@
+# Set by Terraform. Defaults exist only so `helm lint` runs standalone.
+region: us-east-1
+storeName: aws-secretsmanager
+databaseSecretKey: example/backstage/database
+operatorServiceAccount:
+  name: external-secrets
+  namespace: external-secrets
+appSecrets: []
+#  - secretName: backstage-okta
+#    envVar: AUTH_OKTA_CLIENT_SECRET
+#    remoteKey: example/backstage/okta-client-secret
